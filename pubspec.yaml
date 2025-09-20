@@ -1,0 +1,32 @@
+name: health_connect_calorie_app
+description: Flutter app that reads calorie data from Health Connect
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  
+  # Health Connect integration (latest stable version)
+  health: ^13.1.1
+  
+  # State management and utilities
+  provider: ^6.1.1
+  permission_handler: ^11.3.1
+  intl: ^0.19.0
+  
+  # UI components
+  flutter_spinkit: ^5.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
