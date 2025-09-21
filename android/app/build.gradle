@@ -31,8 +31,8 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.example.health_connect_calorie_app"
-    compileSdk = 34
-    ndkVersion = "25.1.8937393"
+    compileSdk = 36  // Updated from 34 to 36
+    ndkVersion = "27.0.12077973"  // Updated from "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -46,7 +46,7 @@ android {
     defaultConfig {
         applicationId = "com.example.health_connect_calorie_app"
         minSdk = 26  // Health Connect requires minimum SDK 26
-        targetSdk = 34
+        targetSdk = 34  // Keep as 34 for now (can be updated later)
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
         multiDexEnabled = true
@@ -72,9 +72,10 @@ flutter {
 }
 
 dependencies {
-    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
+    // Remove explicit Health Connect dependency to avoid version conflicts
+    // The health plugin will handle this automatically
+    implementation("androidx.core:core-ktx:1.15.0")  // Updated version
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")  // Updated version
+    implementation("androidx.activity:activity-compose:1.9.0")  // Updated version
     implementation("androidx.multidex:multidex:2.0.1")
 }
