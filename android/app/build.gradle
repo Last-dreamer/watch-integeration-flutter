@@ -4,6 +4,13 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Configure Java toolchain
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -23,10 +30,9 @@ if (flutterVersionName == null) {
 }
 
 android {
-    ndkVersion = "27.0.12077973"
     namespace = "com.example.health_connect_calorie_app"
-    compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 34
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -34,13 +40,13 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
 
     defaultConfig {
         applicationId = "com.example.health_connect_calorie_app"
         minSdk = 26  // Health Connect requires minimum SDK 26
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
         multiDexEnabled = true
@@ -71,7 +77,4 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.multidex:multidex:2.0.1")
-
-    // implementation("androidx.health.connect:connect-client:1.0.0-alpha11")
-    // implementation("androidx.multidex:multidex:2.0.1")
 }
