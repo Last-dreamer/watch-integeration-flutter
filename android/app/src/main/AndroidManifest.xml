@@ -56,15 +56,6 @@
             </intent-filter>
         </activity>
         
-        <!-- Privacy Policy Activity for Health Connect -->
-        <activity
-            android:name=".PermissionsRationaleActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
-            </intent-filter>
-        </activity>
-
         <!-- Generate by flutter build apk -->
         <meta-data
             android:name="flutterEmbedding"
