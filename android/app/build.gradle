@@ -78,4 +78,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")  // Updated version
     implementation("androidx.activity:activity-compose:1.9.0")  // Updated version
     implementation("androidx.multidex:multidex:2.0.1")
+    implementation("androidx.appcompat:appcompat:1.6.1")
 }
