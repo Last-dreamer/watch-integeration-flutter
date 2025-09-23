@@ -255,7 +255,8 @@ class HealthDataProvider extends ChangeNotifier {
         _setState(AppState.DATA_READY);
       }
     } on TimeoutException {
-      _setError('Request timed out. Please check your connection and try again.',
+      _setError(
+          'Request timed out. Please check your connection and try again.',
           newState: AppState.ERROR);
     } on PlatformException catch (e) {
       if (e.message?.contains('Protected health data is inaccessible') ==
@@ -266,7 +267,8 @@ class HealthDataProvider extends ChangeNotifier {
         _setError('Platform error: ${e.message}', newState: AppState.ERROR);
       }
     } catch (error) {
-      _setError('Failed to fetch health data: $error', newState: AppState.ERROR);
+      _setError('Failed to fetch health data: $error',
+          newState: AppState.ERROR);
     }
   }
 
@@ -500,6 +502,8 @@ class _HealthConnectHomePageState extends State<HealthConnectHomePage> {
           }
         };
         break;
+      case AppState.PERMISSIONS_DENIED:
+        buttonText = "denie3d";
     }
 
     return ElevatedButton(
