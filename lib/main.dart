@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:health_connect_calorie_app/permissions_page.dart';
 import 'package:provider/provider.dart';
 import 'package:health/health.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -17,7 +18,31 @@ void main() {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _hasPermissions = false;
+  bool _isCheckingPermissions = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermissions();
+  }
+
+  Future<void> _checkPermissions() async {
+    final hasPermissions =
+        await Provider.of<HealthDataProvider>(context, listen: false)
+            .checkPermissions();
+    setState(() {
+      _hasPermissions = hasPermissions;
+      _isCheckingPermissions = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -25,14 +50,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.orange,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        // cardTheme: CardTheme(
-        //   elevation: 4,
-        //   margin: EdgeInsets.all(8),
-        //   shape:
-        //       RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        // ),
       ),
-      home: HealthConnectHomePage(),
+      home: _isCheckingPermissions
+          ? Scaffold(body: Center(child: CircularProgressIndicator()))
+          : _hasPermissions
+              ? HealthConnectHomePage()
+              : PermissionsPage(onPermissionGranted: _checkPermissions),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -108,9 +131,30 @@ class HealthDataProvider extends ChangeNotifier {
       try {
         await _health.installHealthConnect();
       } catch (e) {
-        _setError('Failed to install Health Connect: $e');
+        _setError('Failed to install Health Connect: $e',
+            newState: AppState.ERROR);
       }
     }
+  }
+
+  Future<bool> checkPermissions() async {
+    if (Platform.isAndroid) {
+      final activityStatus = await Permission.activityRecognition.status;
+      if (!activityStatus.isGranted) {
+        return false;
+      }
+
+      final locationStatus = await Permission.locationWhenInUse.status;
+      if (!locationStatus.isGranted) {
+        return false;
+      }
+    }
+
+    bool? hasPermissions =
+        await _health.hasPermissions(_types, permissions: _permissions);
+
+    _hasPermissions = hasPermissions ?? false;
+    return _hasPermissions;
   }
 
   // Request all necessary permissions
@@ -120,8 +164,20 @@ class HealthDataProvider extends ChangeNotifier {
     try {
       // Request traditional Android permissions first
       if (Platform.isAndroid) {
-        await Permission.activityRecognition.request();
-        await Permission.locationWhenInUse.request();
+        var activityStatus = await Permission.activityRecognition.request();
+        if (activityStatus.isDenied || activityStatus.isPermanentlyDenied) {
+          _setError(
+              'Activity Recognition permission is required to track workouts. Please grant it in the app settings.',
+              newState: AppState.PERMISSIONS_DENIED);
+          return false;
+        }
+        var locationStatus = await Permission.locationWhenInUse.request();
+        if (locationStatus.isDenied || locationStatus.isPermanentlyDenied) {
+          _setError(
+              'Location permission is required to track distance. Please grant it in the app settings.',
+              newState: AppState.PERMISSIONS_DENIED);
+          return false;
+        }
       }
 
       // Check if Health Connect permissions are already granted
@@ -152,12 +208,14 @@ class HealthDataProvider extends ChangeNotifier {
         return true;
       } else {
         _hasPermissions = false;
-        _setError('Health Connect permissions were denied');
+        _setError(
+            'Health Connect permissions were denied. Please grant them in the Health Connect app.',
+            newState: AppState.PERMISSIONS_DENIED);
         return false;
       }
     } catch (error) {
       _hasPermissions = false;
-      _setError('Permission request failed: $error');
+      _setError('Permission request failed: $error', newState: AppState.ERROR);
       return false;
     }
   }
@@ -166,7 +224,8 @@ class HealthDataProvider extends ChangeNotifier {
   Future<void> fetchHealthData() async {
     if (!_hasPermissions) {
       _setError(
-          'Permissions not granted. Please authorize Health Connect access first.');
+          'Permissions not granted. Please authorize Health Connect access first.',
+          newState: AppState.PERMISSIONS_DENIED);
       return;
     }
 
@@ -197,16 +256,19 @@ class HealthDataProvider extends ChangeNotifier {
       }
     } on TimeoutException {
       _setError(
-          'Request timed out. Please check your connection and try again.');
+          'Request timed out. Please check your connection and try again.',
+          newState: AppState.ERROR);
     } on PlatformException catch (e) {
       if (e.message?.contains('Protected health data is inaccessible') ==
           true) {
-        _setError('Device must be unlocked to access health data');
+        _setError('Device must be unlocked to access health data',
+            newState: AppState.ERROR);
       } else {
-        _setError('Platform error: ${e.message}');
+        _setError('Platform error: ${e.message}', newState: AppState.ERROR);
       }
     } catch (error) {
-      _setError('Failed to fetch health data: $error');
+      _setError('Failed to fetch health data: $error',
+          newState: AppState.ERROR);
     }
   }
 
@@ -249,8 +311,8 @@ class HealthDataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _setError(String error) {
-    _state = AppState.ERROR;
+  void _setError(String error, {AppState newState = AppState.ERROR}) {
+    _state = newState;
     _errorMessage = error;
     notifyListeners();
   }
@@ -266,6 +328,7 @@ enum AppState {
   DATA_NOT_FETCHED,
   REQUESTING_PERMISSIONS,
   PERMISSIONS_GRANTED,
+  PERMISSIONS_DENIED,
   FETCHING_DATA,
   DATA_READY,
   NO_DATA,
@@ -439,6 +502,8 @@ class _HealthConnectHomePageState extends State<HealthConnectHomePage> {
           }
         };
         break;
+      case AppState.PERMISSIONS_DENIED:
+        buttonText = "denie3d";
     }
 
     return ElevatedButton(
@@ -478,7 +543,8 @@ class _HealthConnectHomePageState extends State<HealthConnectHomePage> {
       case AppState.NO_DATA:
         return _buildNoDataDisplay();
       case AppState.ERROR:
-        return _buildErrorDisplay(provider.errorMessage);
+      case AppState.PERMISSIONS_DENIED:
+        return _buildErrorDisplay(provider);
       case AppState.FETCHING_DATA:
         return _buildLoadingDisplay();
       default:
@@ -626,18 +692,34 @@ class _HealthConnectHomePageState extends State<HealthConnectHomePage> {
     );
   }
 
-  Widget _buildErrorDisplay(String error) {
+  Widget _buildErrorDisplay(HealthDataProvider provider) {
     return Card(
       child: Padding(
         padding: EdgeInsets.all(24),
         child: Column(
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red),
+            Icon(
+                provider.state == AppState.PERMISSIONS_DENIED
+                    ? Icons.lock
+                    : Icons.error_outline,
+                size: 48,
+                color: Colors.red),
             SizedBox(height: 16),
-            Text('Error',
+            Text(
+                provider.state == AppState.PERMISSIONS_DENIED
+                    ? 'Permissions Denied'
+                    : 'Error',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
-            Text(error, textAlign: TextAlign.center),
+            Text(provider.errorMessage, textAlign: TextAlign.center),
+            if (provider.state == AppState.PERMISSIONS_DENIED)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: ElevatedButton(
+                  onPressed: () => openAppSettings(),
+                  child: Text('Open App Settings'),
+                ),
+              ),
           ],
         ),
       ),
